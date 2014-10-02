@@ -4,7 +4,7 @@
       "Thomas Klausner <domm@plix.at>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "Dist::Zilla version 4.300028, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "Dist::Zilla version 5.020, CPAN::Meta::Converter version 2.142060",
    "license" : [
       "perl_5"
    ],
@@ -16,33 +16,43 @@
    "prereqs" : {
       "build" : {
          "requires" : {
-            "Module::Build" : "0.3601"
+            "Module::Build" : "0.28"
          }
       },
       "configure" : {
          "requires" : {
-            "Module::Build" : "0.3601"
+            "Module::Build" : "0.28"
          }
       },
       "runtime" : {
          "requires" : {
+            "AnyEvent" : "0",
             "Carp" : "0",
+            "Encode" : "0",
+            "Log::Any" : "0",
             "Moose" : "0",
+            "MooseX::Role::Parameterized" : "0",
             "Package::Stash" : "0",
             "ZMQ::Constants" : "0",
-            "ZMQ::LibZMQ3" : "0",
+            "ZMQ::FFI" : "0",
+            "constant" : "0",
             "namespace::autoclean" : "0",
-            "perl" : "5.010",
+            "perl" : "5.014",
             "strict" : "0",
             "warnings" : "0"
          }
       },
       "test" : {
          "requires" : {
-            "AnyEvent" : "0",
             "Data::Dumper" : "0",
+            "File::Temp" : "0",
+            "JSON::XS" : "0",
+            "Test::More" : "0",
             "Test::Most" : "0",
-            "Test::SharedFork" : "0"
+            "Test::SharedFork" : "0",
+            "bytes" : "0",
+            "perl" : "5.014",
+            "utf8" : "0"
          }
       }
    },
@@ -53,6 +63,6 @@
          "url" : "git://devbox.vpn.validad.net/ZMQx-Class.git"
       }
    },
-   "version" : "0.005"
+   "version" : "0.006"
 }
 

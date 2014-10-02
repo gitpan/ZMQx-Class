@@ -5,30 +5,42 @@ use 5.010;
 use ZMQx::Class::Socket;
 use Carp qw(croak carp);
 
-our $VERSION = "0.005";
+our $VERSION = "0.006";
 # ABSTRACT: OO Interface to ZMQ
 my $__CONTEXT = {};
 
-use ZMQ::LibZMQ3 qw(zmq_socket zmq_init);
-use ZMQ::Constants qw(ZMQ_REQ ZMQ_REP ZMQ_DEALER ZMQ_ROUTER ZMQ_PULL ZMQ_PUSH ZMQ_PUB ZMQ_SUB  ZMQ_XPUB ZMQ_XSUB ZMQ_PAIR);
+use ZMQ::FFI;
+use ZMQ::Constants qw(
+    ZMQ_DEALER
+    ZMQ_PAIR
+    ZMQ_PUB
+    ZMQ_PULL
+    ZMQ_PUSH
+    ZMQ_REP
+    ZMQ_REQ
+    ZMQ_ROUTER
+    ZMQ_SUB
+    ZMQ_XPUB
+    ZMQ_XSUB
+);
 
 my %types = (
-    'REQ'=>ZMQ_REQ,
-    'REP'=>ZMQ_REP,
-    'DEALER'=>ZMQ_DEALER,
-    'ROUTER'=>ZMQ_ROUTER,
-    'PULL'=>ZMQ_PULL,
-    'PUSH'=>ZMQ_PUSH,
-    'PUB'=>ZMQ_PUB,
-    'SUB'=>ZMQ_SUB,
-    'XPUB'=>ZMQ_XPUB,
-    'XSUB'=>ZMQ_XSUB,
-    'PAIR'=>ZMQ_PAIR,
+    'REQ'    => ZMQ_REQ,
+    'REP'    => ZMQ_REP,
+    'DEALER' => ZMQ_DEALER,
+    'ROUTER' => ZMQ_ROUTER,
+    'PULL'   => ZMQ_PULL,
+    'PUSH'   => ZMQ_PUSH,
+    'PUB'    => ZMQ_PUB,
+    'SUB'    => ZMQ_SUB,
+    'XPUB'   => ZMQ_XPUB,
+    'XSUB'   => ZMQ_XSUB,
+    'PAIR'   => ZMQ_PAIR,
 );
 
 sub _new_context {
     my $class = shift;
-    return zmq_init();
+    return ZMQ::FFI->new( @_ );
 }
 
 
@@ -39,31 +51,31 @@ sub context {
 
 
 sub socket {
-    my $class = shift;
+    my $class           = shift;
     my $context_or_type = shift;
-    my ($context,$type);
-    if (ref($context_or_type) eq 'ZMQ::LibZMQ3::Context') {
+    my ( $context, $type );
+    if ( ref($context_or_type) =~ /^ZMQ::FFI::ZMQ\d::Context/ ) {
         $context = $context_or_type;
-        $type = shift;
+        $type    = shift;
     }
     else {
         $context = $class->context;
-        $type = $context_or_type;
+        $type    = $context_or_type;
     }
-    my ($connect, $address, $opts ) = @_;
+    my ( $connect, $address, $opts ) = @_;
     croak "no such socket type: $type" unless defined $types{$type};
 
     my $socket = ZMQx::Class::Socket->new(
-        _socket => zmq_socket($context,$types{$type}),
-        type   => $type,
-        _pid  => $$,
-        _init_opts_for_cloning => [$class, $type, @_],
+        _socket => $context->socket( $types{$type} ),
+        type    => $type,
+        _pid    => $$,
+        _init_opts_for_cloning => [ $class, $type, @_ ],
     );
 
     if ($opts) {
-        while (my ($opt,$val) = each %$opts) {
-            my $method = 'set_'.$opt;
-            if ($socket->can($method)) {
+        while ( my ( $opt, $val ) = each %$opts ) {
+            my $method = 'set_' . $opt;
+            if ( $socket->can($method) ) {
                 $socket->$method($val);
             }
             else {
@@ -72,11 +84,11 @@ sub socket {
         }
     }
 
-    if ($connect && $address) {
-        if ($connect eq 'bind') {
+    if ( $connect && $address ) {
+        if ( $connect eq 'bind' ) {
             $socket->bind($address);
         }
-        elsif ($connect eq 'connect') {
+        elsif ( $connect eq 'connect' ) {
             $socket->connect($address);
         }
         else {
@@ -92,13 +104,15 @@ __END__
 
 =pod
 
+=encoding UTF-8
+
 =head1 NAME
 
 ZMQx::Class - OO Interface to ZMQ
 
 =head1 VERSION
 
-version 0.005
+version 0.006
 
 =head1 SYNOPSIS
 
@@ -106,23 +120,23 @@ version 0.005
   # see example/publisher.pl
   use ZMQx::Class;
   my $publisher = ZMQx::Class->socket( 'PUB', bind => 'tcp://*:10000' );
-  
+
   while ( 1 ) {
       my $random = int( rand ( 10_000 ) );
       say "sending $random hello";
       $publisher->send( [ $random, 'hello' ] );
       select( undef, undef, undef, 0.1);
   }
-  
-  
+
+
   # a ZeroMQ subscriber
   # see example/subscriber.pl
   use ZMQx::Class;
   use Anyevent;
-  
+
   my $subscriber = ZMQx::Class->socket( 'SUB', connect => 'tcp://localhost:10000' );
   $subscriber->subscribe( '1' );
-  
+
   my $watcher = $subscriber->anyevent_watcher( sub {
       while ( my $msg = $subscriber->receive ) {
           say "got $msg->[0] saying $msg->[1]";
@@ -132,7 +146,7 @@ version 0.005
 
 =head1 DESCRIPTION
 
-C<ZMQx::Class> provides an object oriented & Perlish interface to L<ZeroMQ|http://www.zeromq.org/> 3.2. It builds on L<ZMQ::LibZMQ3|https://metacpan.org/module/ZMQ::LibZMQ3>.
+C<ZMQx::Class> provides an object oriented & Perlish interface to L<ZeroMQ|http://www.zeromq.org/> 3.2. It builds on L<ZMQ::FFI|https://metacpan.org/module/ZMQ::FFI>.
 
 Before you use C<ZMQx::Class>, please read the excellent <ZeroMQ Guide|http://zguide.zeromq.org>. It's a fun and interesting read, containing everything you need to get started with ZeroMQ, including lots of example code.
 
@@ -193,7 +207,7 @@ L<ZMQ|https://metacpan.org/module/ZMQ::Socket> is another perlish interface to l
 
 =head1 THANKS
 
-Thanks to L<Validad AG|http://validad.com> for sponsoring the development of this module.
+Thanks to L<Validad|http://www.validad.com/> for sponsoring the development of this module.
 
 =head1 AUTHOR
 
